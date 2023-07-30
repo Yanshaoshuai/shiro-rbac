@@ -1,6 +1,5 @@
 package com.rbac.controller;
 
-import jakarta.servlet.http.HttpSession;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.IncorrectCredentialsException;
@@ -13,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpSession;
 
 
 @RestController
@@ -39,5 +40,9 @@ public class ShiroController {
         }
         session.setAttribute("user", token.getPrincipal().toString());
         return "success";
+    }
+    @GetMapping("hello")
+    public String hello(){
+        return "hello";
     }
 }

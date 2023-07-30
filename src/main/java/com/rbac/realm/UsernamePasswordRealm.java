@@ -2,6 +2,7 @@ package com.rbac.realm;
 
 import com.rbac.entity.User;
 import com.rbac.service.UserService;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -15,8 +16,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.Serializable;
 import java.util.List;
 
+/**
+ * todo 使用缓存
+ */
 @Component
 public class UsernamePasswordRealm extends AuthorizingRealm {
     private final static Logger LOG = LoggerFactory.getLogger(UsernamePasswordRealm.class);
@@ -54,5 +59,13 @@ public class UsernamePasswordRealm extends AuthorizingRealm {
             return new SimpleAuthenticationInfo(token.getPrincipal(),userInfoByName.getPwd(), ByteSource.Util.bytes("salt"),name);
         }
         return null;
+    }
+    /**
+     * 清除缓存
+     */
+    @Override
+    protected void doClearCache(PrincipalCollection principals) {
+        userService.removeCache();
+        super.doClearCache(principals);
     }
 }
