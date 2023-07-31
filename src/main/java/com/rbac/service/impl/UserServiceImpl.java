@@ -33,7 +33,7 @@ public class UserServiceImpl implements UserService {
             return cacheUser;
         }
         User user = userMapper.getUserByName(name);
-        bucket.set(user,10, TimeUnit.MINUTES);
+        bucket.set(user,getExpire(), TimeUnit.MILLISECONDS);
         return user;
     }
 
@@ -46,7 +46,7 @@ public class UserServiceImpl implements UserService {
         }
         List<String> roleNamesByUserName = userMapper.getRoleNamesByUserName(name);
         rList.addAll(roleNamesByUserName);
-        rList.expire(Duration.ofMinutes(10));
+        rList.expire(Duration.ofMillis(getExpire()));
         return roleNamesByUserName;
     }
 
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
         }
         List<String> permissions = userMapper.getPermissionsByRoleNames(roleNames);
         rList.addAll(permissions);
-        rList.expire(Duration.ofMinutes(10));
+        rList.expire(Duration.ofMillis(getExpire()));
         return permissions;
     }
 
@@ -71,6 +71,10 @@ public class UserServiceImpl implements UserService {
 
     private static String getSessionId() {
         return SecurityUtils.getSubject().getSession().getId().toString();
+    }
+
+    private static Long getExpire() {
+        return SecurityUtils.getSubject().getSession().getTimeout();
     }
 
 }

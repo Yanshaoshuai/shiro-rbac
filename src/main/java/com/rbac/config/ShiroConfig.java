@@ -1,21 +1,27 @@
-package com.javademo.shiro.springboot.config;
+package com.rbac.config;
 
-import com.rbac.config.RedisSessionDao;
 import com.rbac.realm.UsernamePasswordRealm;
+import com.rbac.utils.Asymmetric;
+import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
-import org.apache.shiro.mgt.RememberMeManager;
-import org.apache.shiro.session.mgt.DefaultSessionManager;
-import org.apache.shiro.spring.web.config.DefaultShiroFilterChainDefinition;
-import org.apache.shiro.web.mgt.CookieRememberMeManager;
+import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.web.servlet.SimpleCookie;
-import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 import org.redisson.api.RedissonClient;
-import org.redisson.client.RedisClient;
-import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.ResourceUtils;
+
+import javax.servlet.Filter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 public class ShiroConfig {
@@ -23,32 +29,73 @@ public class ShiroConfig {
 
     private final RedissonClient redissonClient;
 
+
     public ShiroConfig(UsernamePasswordRealm usernamePasswordRealm, RedissonClient redissonClient) {
         this.usernamePasswordRealm = usernamePasswordRealm;
         this.redissonClient = redissonClient;
     }
 
     @Bean
-    public RedisSessionDao redisSessionDao(){
-        return new RedisSessionDao(redissonClient, 600L);
+    public PrivateKey privateKey() {
+        PrivateKey privateKey;
+        try {
+            File file = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "keys/privateKey");
+            String privateKeyStr = FileCopyUtils.copyToString(new FileReader(file));
+            byte[] decode = Base64.getMimeDecoder().decode(privateKeyStr);
+            privateKey = Asymmetric.loadPrivateKey(decode, SignatureAlgorithm.RS512.getFamilyName());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return privateKey;
+    }
+
+    @Bean
+    public PublicKey publicKey() {
+        PublicKey publicKey;
+        try {
+            File file = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "keys/publicKey");
+            String publicKeyStr = FileCopyUtils.copyToString(new FileReader(file));
+            byte[] decode = Base64.getMimeDecoder().decode(publicKeyStr);
+            publicKey = Asymmetric.loadPublicKey(decode, SignatureAlgorithm.RS512.getFamilyName());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return publicKey;
+    }
+
+    @Bean
+    public RedisSessionDao redisSessionDao() {
+        return new RedisSessionDao(redissonClient, 10*60*1000L);
+    }
+
+    public Map<String, Filter> filters(PublicKey publicKey) {
+        Map<String, Filter> filterMap = new HashMap<>();
+        filterMap.put("jwt-authc", new JwtAuthenticationFilter(publicKey));
+        filterMap.put("jwt-perms", new JwtPermissionFilter());
+        filterMap.put("jwt-roles", new JwtRolesFilter());
+        return filterMap;
     }
 
     /**
      * 创建会话管理器
      */
-    public DefaultWebSessionManager defaultSessionManager(RedisSessionDao redisSessionDao){
-        DefaultWebSessionManager sessionManager=new DefaultWebSessionManager();
+    @Bean
+    public ShiroSessionManager defaultSessionManager(RedisSessionDao redisSessionDao, PublicKey publicKey) {
+        ShiroSessionManager sessionManager = new ShiroSessionManager(publicKey);
         sessionManager.setSessionDAO(redisSessionDao);
-        sessionManager.setSessionValidationSchedulerEnabled(false);
+        sessionManager.setSessionValidationSchedulerEnabled(true);
         sessionManager.setSessionIdCookieEnabled(true);
         sessionManager.setGlobalSessionTimeout(redisSessionDao.getExpire());
+        sessionManager.setSessionIdUrlRewritingEnabled(false);
+        sessionManager.setSessionIdCookie(simpleCookie());
         return sessionManager;
     }
+
     /**
      * 创建defaultWebSecurityManager
      */
     @Bean
-    public DefaultWebSecurityManager defaultWebSecurityManager() {
+    public DefaultWebSecurityManager defaultWebSecurityManager(ShiroSessionManager shiroSessionManager) {
         // 1.创建defaultWebSecurityManager
         DefaultWebSecurityManager defaultWebSecurityManager = new DefaultWebSecurityManager();
         // 2.创建加密对象 设置相关属性
@@ -61,57 +108,50 @@ public class ShiroConfig {
         usernamePasswordRealm.setCredentialsMatcher(credentialsMatcher);
         // 4.将realm设置到创建defaultWebSecurityManager中
         defaultWebSecurityManager.setRealm(usernamePasswordRealm);
-        defaultWebSecurityManager.setRememberMeManager(rememberMeManager());
+        defaultWebSecurityManager.setSessionManager(shiroSessionManager);
         return defaultWebSecurityManager;
     }
 
 
-
-    private SimpleCookie rememberMeCookie() {
-        SimpleCookie cookie = new SimpleCookie("rememberMe");
-        // 设置跨域
-        // cookie.setDomain(domain);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setMaxAge(30 * 24 * 60 * 60);
-        return cookie;
+    @Bean(name = "sessionIdCookie")
+    public SimpleCookie simpleCookie() {
+        SimpleCookie simpleCookie = new SimpleCookie();
+        simpleCookie.setName("ShiroSession");
+        return simpleCookie;
     }
 
-    private RememberMeManager rememberMeManager() {
-        CookieRememberMeManager rememberMeManager = new CookieRememberMeManager();
-        rememberMeManager.setCookie(rememberMeCookie());
-        rememberMeManager.setCipherKey("1234567890987654".getBytes());
-        return rememberMeManager;
-    }
 
     /**
      * 设置shiro过滤器拦截范围
      */
-    @Bean
-    public DefaultShiroFilterChainDefinition shiroFilterChainDefinition() {
-        DefaultShiroFilterChainDefinition definition = new DefaultShiroFilterChainDefinition();
+    private Map<String, String> filterChainDefinitionMap() {
+        Map<String, String> definition = new HashMap<>();
         // anon指定url可以匿名访问
-        definition.addPathDefinition("/shiro/userLogin", "anon");
-        definition.addPathDefinition("/shiro/login", "anon");
+        definition.put("/shiro/getToken", "anon");
         // 配置登出过滤器
-        definition.addPathDefinition("/logout", "logout");
+        definition.put("/logout", "logout");
+        // 放行swagger
+        definition.put("/swagger-ui/**", "anon");
+        definition.put("/swagger/**", "anon");
+        definition.put("/webjars/**", "anon");
+        definition.put("/swagger-resources/**", "anon");
+        definition.put("/v2/**", "anon");
+        definition.put("/v3/**", "anon");
+        definition.put("/static/**", "anon");
         // 如果没有登录会跳到相应的登录页面登录
-        definition.addPathDefinition("/**", "authc");
-        // 用户拦截器，用户已经身份验证/记住我登录的都可
-        definition.addPathDefinition("/**", "user");
+        // definition.put("/**", "authc");
+        definition.put("/**", "jwt-authc");
         return definition;
     }
 
-    /**
-     * 开启注解
-     *
-     * @return
-     */
     @Bean
-    @ConditionalOnMissingBean
-    public DefaultAdvisorAutoProxyCreator advisorAutoProxyCreator() {
-        DefaultAdvisorAutoProxyCreator advisorAutoProxyCreator = new DefaultAdvisorAutoProxyCreator();
-        advisorAutoProxyCreator.setProxyTargetClass(true);
-        return advisorAutoProxyCreator;
+    public ShiroFilterFactoryBean shiroFilterFactoryBean(PublicKey publicKey, DefaultWebSecurityManager securityManager) {
+        ShiroFilterFactoryBean factoryBean = new ShiroFilterFactoryBean();
+        factoryBean.setFilters(filters(publicKey));
+        factoryBean.setLoginUrl("/shiro/login");
+        factoryBean.setUnauthorizedUrl("/shiro/login");
+        factoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap());
+        factoryBean.setSecurityManager(securityManager);
+        return factoryBean;
     }
 }

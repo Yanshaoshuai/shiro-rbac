@@ -33,27 +33,29 @@ public class RedisSessionDao extends AbstractSessionDAO {
     protected Serializable doCreate(Session session) {
         Serializable sessionId = generateSessionId(session);
         assignSessionId(session,sessionId);
-        RBucket<Session> bucket = redissonClient.getBucket(sessionId.toString());
-        bucket.set(session,expire, TimeUnit.SECONDS);
+        RBucket<String> bucket = redissonClient.getBucket(sessionId.toString());
+        if(bucket.get()!=null){
+            bucket.set(ObjectSerializer.serialize(session),expire, TimeUnit.MILLISECONDS);
+        }
         return sessionId;
     }
 
     @Override
     protected Session doReadSession(Serializable serializable) {
         String sessionId = serializable.toString();
-        RBucket<Session> bucket = redissonClient.getBucket(sessionId);
-        return bucket.get();
+        RBucket<String> bucket = redissonClient.getBucket(sessionId);
+        return (Session) ObjectSerializer.deserialize(bucket.get());
     }
 
     @Override
     public void update(Session session) throws UnknownSessionException {
-        RBucket<Session> bucket = redissonClient.getBucket(session.getId().toString());
-        bucket.set(session,expire, TimeUnit.SECONDS);
+        RBucket<String> bucket = redissonClient.getBucket(session.getId().toString());
+        bucket.set(ObjectSerializer.serialize(session),expire, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void delete(Session session) {
-        RBucket<Session> bucket = redissonClient.getBucket(session.getId().toString());
+        RBucket<String> bucket = redissonClient.getBucket(session.getId().toString());
         bucket.delete();
     }
 

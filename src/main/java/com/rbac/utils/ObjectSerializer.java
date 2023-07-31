@@ -1,5 +1,6 @@
 package com.rbac.utils;
 
+import org.apache.shiro.session.mgt.SimpleSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,4 +74,5 @@ public class ObjectSerializer {
         }
         return object;
     }
+
 }

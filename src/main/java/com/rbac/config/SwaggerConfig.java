@@ -17,8 +17,10 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
+                .components(new Components().addSecuritySchemes("BearerAuth",
+                        new SecurityScheme().name("token")
+                                .type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).scheme("bearer").bearerFormat("JWT")))
                 .addSecurityItem(new SecurityRequirement().addList("BearerAuth"))
-                .components(new Components().addSecuritySchemes("BearerAuth", new SecurityScheme().name("Bearer Authorization").type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")))
                 .info(new Info().title("shiro rbac")
                         .description("a rbac system implement by shiro")
                         .version("V1.0")
