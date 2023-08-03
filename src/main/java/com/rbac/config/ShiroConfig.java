@@ -5,6 +5,8 @@ import com.rbac.utils.Asymmetric;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
+import org.apache.shiro.web.filter.mgt.FilterChainManager;
+import org.apache.shiro.web.filter.mgt.PathMatchingFilterChainResolver;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.web.servlet.SimpleCookie;
 import org.redisson.api.RedissonClient;
@@ -145,12 +147,25 @@ public class ShiroConfig {
     }
 
     @Bean
-    public ShiroFilterFactoryBean shiroFilterFactoryBean(PublicKey publicKey, DefaultWebSecurityManager securityManager) {
-        ShiroFilterFactoryBean factoryBean = new ShiroFilterFactoryBean();
-        factoryBean.setFilters(filters(publicKey));
-        factoryBean.setLoginUrl("/shiro/login");
-        factoryBean.setUnauthorizedUrl("/shiro/login");
-        factoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap());
+    public CustomFilterChainManager customFilterChainManager(PublicKey publicKey){
+        CustomFilterChainManager customFilterChainManager=new CustomFilterChainManager();
+        customFilterChainManager.setLoginUrl("/shiro/login");
+        customFilterChainManager.setUnauthorizedUrl("/shiro/login");
+        customFilterChainManager.setSuccessUrl("/home");
+        customFilterChainManager.setCustomFilters(filters(publicKey));
+        return customFilterChainManager;
+    }
+
+    @Bean
+    public CustomPathMatchingFilterChainResolver customPathMatchingFilterChainResolver(CustomFilterChainManager filterChainManager){
+        CustomPathMatchingFilterChainResolver filterChainResolver=new CustomPathMatchingFilterChainResolver();
+        filterChainResolver.setFilterChainManager(filterChainManager);
+        return filterChainResolver;
+    }
+    @Bean
+    public ShiroFilterFactoryBean shiroFilterFactoryBean(DefaultWebSecurityManager securityManager, CustomPathMatchingFilterChainResolver filterChainResolver) {
+        CustomShiroFilterFactoryBean factoryBean = new CustomShiroFilterFactoryBean();
+        factoryBean.setChainResolver(filterChainResolver);
         factoryBean.setSecurityManager(securityManager);
         return factoryBean;
     }

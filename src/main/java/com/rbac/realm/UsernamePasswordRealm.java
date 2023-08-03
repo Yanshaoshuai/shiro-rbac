@@ -1,6 +1,6 @@
 package com.rbac.realm;
 
-import com.rbac.entity.User;
+import com.rbac.pojo.User;
 import com.rbac.service.UserService;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;

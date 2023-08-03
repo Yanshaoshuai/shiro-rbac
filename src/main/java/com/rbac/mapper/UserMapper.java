@@ -1,6 +1,6 @@
 package com.rbac.mapper;
 
-import com.rbac.entity.User;
+import com.rbac.pojo.User;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;

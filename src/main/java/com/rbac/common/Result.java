@@ -20,6 +20,9 @@ public record Result<T>(int code, String status, String message, T data) {
     public static <T> Result<T> error(HttpStatus status, String message) {
         return new Result<>(status.value(), status.getReasonPhrase(), message, null);
     }
+    public static <T> Result<T> ok() {
+        return new Result<>(HttpStatus.OK.value(), HttpStatus.OK.getReasonPhrase(), null, null);
+    }
 
     public static <T> Result<T> ok(T data) {
         return new Result<>(HttpStatus.OK.value(), HttpStatus.OK.getReasonPhrase(), null, data);

@@ -1,4 +1,4 @@
-package com.rbac.entity;
+package com.rbac.pojo;
 
 import java.io.Serializable;
 

@@ -26,9 +26,14 @@ public class JwtAuthenticationFilter extends AuthenticatingFilter {
     }
 
     @Override
+    protected boolean preHandle(ServletRequest request, ServletResponse response) throws Exception {
+        return super.preHandle(request, response);
+    }
+
+    @Override
     protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) {
         String token = WebUtils.toHttp(request).getHeader("token");
-        if(StringUtils.isEmpty(token)){
+        if (StringUtils.isEmpty(token)) {
             Unauthorized(response);
         }
         return new BearerToken(token, request.getRemoteHost());
@@ -44,21 +49,22 @@ public class JwtAuthenticationFilter extends AuthenticatingFilter {
             try {
                 JWTUtil.getClaims(token, publicKey);
             } catch (Exception e) {
-                Unauthorized(response);
                 return false;
             }
             return true;
         }
-        Unauthorized(response);
         return false;
     }
+
     /**
      * 访问拒绝时调用
      */
     @Override
     protected boolean onAccessDenied(ServletRequest request, ServletResponse response) {
-       return false;
+        Unauthorized(response);
+        return false;
     }
+
     private static void Unauthorized(ServletResponse response) {
         response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json; charset=utf-8");

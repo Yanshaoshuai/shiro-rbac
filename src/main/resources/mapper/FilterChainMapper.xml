@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rbac.mapper.FilterChainMapper">
+    <resultMap id="filterChainMap" type="com.rbac.pojo.FilterChainItem">
+        <id property="id" jdbcType="BIGINT" column="id"/>
+        <result property="urlPatternName" jdbcType="VARCHAR" column="url_pattern_name"/>
+        <result property="urlPattern" jdbcType="VARCHAR" column="url_pattern"/>
+        <result property="filterName" jdbcType="VARCHAR" column="filter_name"/>
+        <result property="roles" jdbcType="VARCHAR" column="roles"/>
+        <result property="permissions" jdbcType="VARCHAR" column="permissions"/>
+        <result property="order" jdbcType="INTEGER" column="order"/>
+        <result property="active" jdbcType="TINYINT" column="active"/>
+    </resultMap>
+  <sql id="columns">
+    `id`,`url_pattern_name`,`url_pattern`,`filter_name`,`roles`,`permissions`,`order`,`active`
+  </sql>
+    <select id="getList" resultMap="filterChainMap">
+        select <include refid="columns"/>
+        from filter_chain
+    </select>
+
+    <select id="selectById" parameterType="long" resultMap="filterChainMap">
+        select <include refid="columns"/>
+        from filter_chain
+        where id = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.rbac.pojo.FilterChainItem">
+        insert into filter_chain(`url_pattern_name`,`url_pattern`,`filter_name`,`roles`,`permissions`,`order`,`active`)
+        values (#{url_pattern_name},#{url_pattern},#{filter_name},#{roles},#{permissions},#{order},#{active})
+    </insert>
+
+    <update id="update" parameterType="com.rbac.pojo.FilterChainItem">
+        update filter_chain
+        set `url_pattern_name`=#{username},
+            `url_pattern`=#{url_pattern}
+            `filter_name`=#{filter_name}
+            `roles`=#{roles}
+            `permissions`=#{permissions}
+            `order`=#{order}
+            `active`=#{active}
+        where id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        delete
+        from filter_chain
+        where id = #{id}
+    </delete>
+
+    <!--    分页查询-->
+    <select id="getPage" parameterType="map" resultMap="filterChainMap">
+        select  <include refid="columns"/>
+        from filter_chain limit #{startIndex}, #{pageSize}
+    </select>
+  <!--count-->
+  <select id="count" resultType="long">
+    select count(1) from filter_chain
+  </select>
+</mapper>

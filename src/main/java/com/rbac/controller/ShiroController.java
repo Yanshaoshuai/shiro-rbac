@@ -23,7 +23,6 @@ import java.security.PrivateKey;
 public class ShiroController {
     private final static Logger LOG = LoggerFactory.getLogger(ShiroController.class);
     private final PrivateKey privateKey;
-
     public ShiroController(PrivateKey privateKey) {
         this.privateKey = privateKey;
     }
@@ -49,19 +48,14 @@ public class ShiroController {
 
     @GetMapping("access")
     public Result<String> getAccessInfo(){
-        //todo getUserInfo
         return null;
     }
 
     @GetMapping("hasAccess")
-    public Result<Boolean> hasAccess(String url,String username){
-        //todo
-        return Result.ok(false);
+    public Result<Boolean> hasAccess(String url){
+        Subject subject = SecurityUtils.getSubject();
+        return Result.ok( subject.isPermitted(url));
     }
-
-    //todo dynamic access config
-    //todo crud for dynamic access config
-
     @GetMapping("hello")
     public String hello(){
         return "hello";

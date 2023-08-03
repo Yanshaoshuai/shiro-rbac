@@ -1,6 +1,6 @@
 package com.rbac.service.impl;
 
-import com.rbac.entity.User;
+import com.rbac.pojo.User;
 import com.rbac.mapper.UserMapper;
 import com.rbac.service.UserService;
 import org.apache.shiro.SecurityUtils;

@@ -1,7 +1,7 @@
 package com.rbac.service;
 
 
-import com.rbac.entity.User;
+import com.rbac.pojo.User;
 
 import java.util.List;
 
