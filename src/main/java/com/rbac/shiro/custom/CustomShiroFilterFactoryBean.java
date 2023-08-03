@@ -1,4 +1,4 @@
-package com.rbac.config;
+package com.rbac.shiro.custom;
 
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;

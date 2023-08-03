@@ -1,12 +1,18 @@
 package com.rbac.config;
 
 import com.rbac.realm.UsernamePasswordRealm;
+import com.rbac.shiro.custom.CustomFilterChainManager;
+import com.rbac.shiro.custom.CustomPathMatchingFilterChainResolver;
+import com.rbac.shiro.custom.CustomShiroFilterFactoryBean;
+import com.rbac.shiro.custom.JwtAuthenticationFilter;
+import com.rbac.shiro.custom.JwtPermissionFilter;
+import com.rbac.shiro.custom.JwtRolesFilter;
+import com.rbac.shiro.custom.RedisSessionDao;
+import com.rbac.shiro.custom.ShiroSessionManager;
 import com.rbac.utils.Asymmetric;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
-import org.apache.shiro.web.filter.mgt.FilterChainManager;
-import org.apache.shiro.web.filter.mgt.PathMatchingFilterChainResolver;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.web.servlet.SimpleCookie;
 import org.redisson.api.RedissonClient;

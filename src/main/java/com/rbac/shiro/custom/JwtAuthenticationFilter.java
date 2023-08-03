@@ -1,4 +1,4 @@
-package com.rbac.config;
+package com.rbac.shiro.custom;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.rbac.common.Result;

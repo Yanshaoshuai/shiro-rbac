@@ -1,7 +1,7 @@
 package com.rbac.service.impl;
 
 import com.rbac.common.PageResult;
-import com.rbac.config.CustomFilterChainManager;
+import com.rbac.shiro.custom.CustomFilterChainManager;
 import com.rbac.mapper.FilterChainMapper;
 import com.rbac.pojo.FilterChainItem;
 import com.rbac.service.FilterChainService;

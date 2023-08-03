@@ -1,4 +1,4 @@
-package com.rbac.config;
+package com.rbac.shiro.custom;
 
 import com.rbac.utils.ObjectSerializer;
 import org.apache.shiro.session.Session;

@@ -1,4 +1,4 @@
-package com.rbac.config;
+package com.rbac.shiro.custom;
 
 import org.apache.shiro.web.filter.mgt.FilterChainManager;
 import org.apache.shiro.web.filter.mgt.PathMatchingFilterChainResolver;
